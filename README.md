@@ -48,41 +48,17 @@ ccswresp --init
 ccswresp
 ```
 
-### 方式 4：直接下载二进制
-
-```bash
-# macOS (Apple Silicon)
-curl -fsSLo /usr/local/bin/ccswresp \
-  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_arm64
-chmod +x /usr/local/bin/ccswresp
-
-# macOS (Intel)
-curl -fsSLo /usr/local/bin/ccswresp \
-  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_amd64
-chmod +x /usr/local/bin/ccswresp
-
-# Linux (amd64)
-curl -fsSLo /usr/local/bin/ccswresp \
-  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_linux_amd64
-chmod +x /usr/local/bin/ccswresp
-
-# Linux (arm64)
-curl -fsSLo /usr/local/bin/ccswresp \
-  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_linux_arm64
-chmod +x /usr/local/bin/ccswresp
-```
-
-### 方式 5：一键安装脚本
+### 方式 4：一键安装脚本
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/uhozicloud/ccswresp/main/scripts/install.sh | bash
 ```
 
-### 方式 6：Windows
+### 方式 5：Windows
 
-从 [GitHub Releases](https://github.com/uhozicloud/ccswresp/releases) 下载 `ccswresp_windows_amd64.exe`，放到 PATH 中即可。
+从 [GitHub Releases](https://github.com/uhozicloud/ccswresp/releases) 下载 `ccswresp_windows-amd64.zip`，解压后将 `ccswresp.exe` 放到 PATH 中。
 
-### 方式 7：从源码编译 (Go)
+### 方式 6：从源码编译 (Go)
 
 ```bash
 git clone https://github.com/uhozicloud/ccswresp.git

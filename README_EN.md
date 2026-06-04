@@ -49,41 +49,17 @@ ccswresp --init
 ccswresp
 ```
 
-### Option 4: Direct binary download
-
-```bash
-# macOS (Apple Silicon)
-curl -fsSLo /usr/local/bin/ccswresp \
-  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_arm64
-chmod +x /usr/local/bin/ccswresp
-
-# macOS (Intel)
-curl -fsSLo /usr/local/bin/ccswresp \
-  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_amd64
-chmod +x /usr/local/bin/ccswresp
-
-# Linux (amd64)
-curl -fsSLo /usr/local/bin/ccswresp \
-  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_linux_amd64
-chmod +x /usr/local/bin/ccswresp
-
-# Linux (arm64)
-curl -fsSLo /usr/local/bin/ccswresp \
-  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_linux_arm64
-chmod +x /usr/local/bin/ccswresp
-```
-
-### Option 5: One-liner install script
+### Option 4: One-liner install script
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/uhozicloud/ccswresp/main/scripts/install.sh | bash
 ```
 
-### Option 6: Windows
+### Option 5: Windows
 
-Download `ccswresp_windows_amd64.exe` from [GitHub Releases](https://github.com/uhozicloud/ccswresp/releases) and place it in your PATH.
+Download `ccswresp_windows-amd64.zip` from [GitHub Releases](https://github.com/uhozicloud/ccswresp/releases), extract `ccswresp.exe` and place it in your PATH.
 
-### Option 7: Build from source (Go)
+### Option 6: Build from source (Go)
 
 ```bash
 git clone https://github.com/uhozicloud/ccswresp.git
