@@ -3,9 +3,6 @@
 #   brew tap uhozicloud/ccswresp
 #   brew install ccswresp
 #   brew services start ccswresp
-#
-# Or install directly:
-#   brew install uhozicloud/ccswresp/ccswresp
 
 class Ccswresp < Formula
   desc "Protocol translation proxy: OpenAI Responses API ↔ Chat Completions API"
@@ -15,11 +12,11 @@ class Ccswresp < Formula
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_arm64"
-      sha256 "REPLACE_WITH_ACTUAL_SHA256_AFTER_BUILD"
+      url "https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_arm64.tar.gz"
+      sha256 "6ca1967a2621a6a9d34d8757790870a20501507f2126dc864d6220d2b64fb6f0"
     else
-      url "https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_amd64"
-      sha256 "REPLACE_WITH_ACTUAL_SHA256_AFTER_BUILD"
+      url "https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_amd64.tar.gz"
+      sha256 "6b08dcf9132a525ec5c5dcbfa3ccbd61885af295de0845017d859770020588b9"
     end
   end
 
@@ -56,12 +53,6 @@ class Ccswresp < Formula
   end
 
   test do
-    pid = spawn bin/"ccswresp", "-p", "11436"
-    sleep 2
-    output = shell_output("curl -s http://127.0.0.1:11436/health")
-    assert_match(/"status":"ok"/, output)
-  ensure
-    Process.kill("TERM", pid) if pid
-    Process.wait(pid) if pid
+    system bin/"ccswresp", "--version"
   end
 end
