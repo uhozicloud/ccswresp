@@ -131,7 +131,7 @@ main() {
   echo -e "  ${BOLD}Quick start:${NC}"
   echo "  1. Edit ~/.ccswresp/.env and set your API key"
   echo "  2. Run: ${CYAN}ccswresp${NC}"
-  echo "  3. Point Codex CLI to http://127.0.0.1:11435/v1/responses"
+  echo "  3. Point Codex CLI to http://127.0.0.1:11435/responses"
   echo ""
 }
 

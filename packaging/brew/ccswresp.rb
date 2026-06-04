@@ -35,7 +35,7 @@ class Ccswresp < Formula
         1. Create config: ccswresp --init
         2. Edit config:   nano ~/.ccswresp/.env  (set your API key)
         3. Start:         ccswresp
-        4. Point Codex CLI to http://127.0.0.1:11435/v1/responses
+        4. Point Codex CLI to http://127.0.0.1:11435/responses
 
       For all options: ccswresp --help
     EOS

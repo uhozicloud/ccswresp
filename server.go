@@ -37,9 +37,7 @@ func NewServer(port int, bindAddr, apiKey, baseURL, defaultModel string) *Server
 func (s *Server) Start() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", s.handleRequest)
-	mux.HandleFunc("/v1/responses", s.handleRequest)
 	mux.HandleFunc("/responses", s.handleRequest)
-	mux.HandleFunc("/v1", s.handleHealth)
 	mux.HandleFunc("/health", s.handleHealth)
 
 	s.httpServer = &http.Server{
@@ -52,7 +50,7 @@ func (s *Server) Start() error {
 
 	fmt.Println()
 	logOk("ccswresp started")
-	logInfo(fmt.Sprintf("http://%s:%d/v1/responses", s.BindAddr, s.Port))
+	logInfo(fmt.Sprintf("http://%s:%d/responses", s.BindAddr, s.Port))
 	logInfo("model: " + s.DefaultModel)
 	logInfo("upstream: " + s.BaseURL)
 	if s.APIKey == "" {
