@@ -53,45 +53,47 @@ check_existing() {
 
 # Download and install
 install_binary() {
-  local ARCHIVE_NAME="${PKG_NAME}_${OS}-${ARCH}"
+  local BINARY_NAME="${PKG_NAME}_${OS}_${ARCH}"
   if [ "$OS" = "windows" ]; then
-    ARCHIVE_NAME="${ARCHIVE_NAME}.zip"
-  else
-    ARCHIVE_NAME="${ARCHIVE_NAME}.tar.gz"
+    BINARY_NAME="${BINARY_NAME}.exe"
   fi
 
-  local DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/${ARCHIVE_NAME}"
+  local DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/${BINARY_NAME}"
 
   info "Downloading ${DOWNLOAD_URL}..."
   local TMP_DIR=$(mktemp -d)
+  local TMP_FILE="${TMP_DIR}/${BINARY_NAME}"
 
   if command -v curl &>/dev/null; then
-    curl -fsSL "$DOWNLOAD_URL" -o "${TMP_DIR}/${ARCHIVE_NAME}"
+    curl -fsSL "$DOWNLOAD_URL" -o "$TMP_FILE" || {
+      # Try .tar.gz if raw binary not found
+      DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/${BINARY_NAME}.tar.gz"
+      info "Trying archive: ${DOWNLOAD_URL}..."
+      curl -fsSL "$DOWNLOAD_URL" -o "${TMP_DIR}/${BINARY_NAME}.tar.gz"
+      tar -xzf "${TMP_DIR}/${BINARY_NAME}.tar.gz" -C "$TMP_DIR"
+    }
   elif command -v wget &>/dev/null; then
-    wget -q "$DOWNLOAD_URL" -O "${TMP_DIR}/${ARCHIVE_NAME}"
+    wget -q "$DOWNLOAD_URL" -O "$TMP_FILE" || {
+      DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/${BINARY_NAME}.tar.gz"
+      wget -q "$DOWNLOAD_URL" -O "${TMP_DIR}/${BINARY_NAME}.tar.gz"
+      tar -xzf "${TMP_DIR}/${BINARY_NAME}.tar.gz" -C "$TMP_DIR"
+    }
   else
     err "Neither curl nor wget found. Please install one of them."
     exit 1
   fi
 
-  # Extract
-  if [ "$OS" = "windows" ]; then
-    unzip -q "${TMP_DIR}/${ARCHIVE_NAME}" -d "$TMP_DIR"
-  else
-    tar -xzf "${TMP_DIR}/${ARCHIVE_NAME}" -C "$TMP_DIR"
-  fi
-
   # Install
   if [ "$OS" = "windows" ]; then
-    info "On Windows, move ccswresp.exe to a directory in your PATH"
-    cp "${TMP_DIR}/ccswresp.exe" "${HOME}/"
-    ok "Binary saved to ${HOME}/ccswresp.exe"
+    info "On Windows, move ${BINARY_NAME}.exe to a directory in your PATH"
+    cp "${TMP_DIR}/${BINARY_NAME}"* "${HOME}/"
+    ok "Binary saved to ${HOME}/${BINARY_NAME}"
   else
     if [ -w "$INSTALL_DIR" ]; then
-      cp "${TMP_DIR}/ccswresp" "$INSTALL_DIR/ccswresp"
+      cp "${TMP_DIR}/${BINARY_NAME}" "$INSTALL_DIR/ccswresp"
       chmod +x "$INSTALL_DIR/ccswresp"
     else
-      sudo cp "${TMP_DIR}/ccswresp" "$INSTALL_DIR/ccswresp"
+      sudo cp "${TMP_DIR}/${BINARY_NAME}" "$INSTALL_DIR/ccswresp"
       sudo chmod +x "$INSTALL_DIR/ccswresp"
     fi
     ok "Installed to ${INSTALL_DIR}/ccswresp"

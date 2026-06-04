@@ -14,17 +14,20 @@ class Ccswresp < Formula
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin-arm64.tar.gz"
+      url "https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_arm64"
       sha256 "REPLACE_WITH_ACTUAL_SHA256_AFTER_BUILD"
     else
-      url "https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin-amd64.tar.gz"
+      url "https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_amd64"
       sha256 "REPLACE_WITH_ACTUAL_SHA256_AFTER_BUILD"
     end
   end
 
   def install
-    # Binary inside the tar.gz is named "ccswresp"
-    bin.install "ccswresp"
+    if Hardware::CPU.arm?
+      bin.install "ccswresp_darwin_arm64" => "ccswresp"
+    else
+      bin.install "ccswresp_darwin_amd64" => "ccswresp"
+    end
   end
 
   def caveats

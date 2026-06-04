@@ -8,7 +8,7 @@ Release:        1%{?dist}
 Summary:        Protocol translation proxy: OpenAI Responses API ↔ Chat Completions API
 License:        MIT
 URL:            https://github.com/uhozicloud/ccswresp
-Source0:        https://github.com/uhozicloud/ccswresp/releases/download/v%{version}/%{name}_linux-amd64.tar.gz
+Source0:        https://github.com/uhozicloud/ccswresp/releases/download/v%{version}/%{name}_linux_amd64
 
 BuildArch:      x86_64
 Requires:       glibc >= 2.17
@@ -29,8 +29,7 @@ No runtime dependencies — it's a single static Go binary.
 
 %install
 mkdir -p %{buildroot}%{_bindir}
-tar -xzf %{SOURCE0} -C %{buildroot}%{_bindir}
-chmod 755 %{buildroot}%{_bindir}/ccswresp
+install -m 755 %{SOURCE0} %{buildroot}%{_bindir}/ccswresp
 
 %files
 %{_bindir}/ccswresp
