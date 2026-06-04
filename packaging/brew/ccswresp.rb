@@ -2,6 +2,7 @@
 # Usage:
 #   brew tap uhozicloud/ccswresp
 #   brew install ccswresp
+#   brew services start ccswresp
 #
 # Or install directly:
 #   brew install uhozicloud/ccswresp/ccswresp
@@ -22,6 +23,15 @@ class Ccswresp < Formula
     end
   end
 
+  service do
+    run [opt_bin/"ccswresp"]
+    keep_alive true
+    run_type :immediate
+    log_path var/"log/ccswresp.log"
+    error_log_path var/"log/ccswresp.log"
+    working_dir Dir.home
+  end
+
   def install
     if Hardware::CPU.arm?
       bin.install "ccswresp_darwin_arm64" => "ccswresp"
@@ -36,16 +46,16 @@ class Ccswresp < Formula
 
       Quick start:
         1. Create config: ccswresp --init
-        2. Edit config:   nano ~/.ccswresp/.env  (set your API key)
-        3. Start:         ccswresp
-        4. Point Codex CLI to http://127.0.0.1:11435/responses
+        2. Start:         brew services start ccswresp
+        3. Status:        brew services info ccswresp
+        4. Stop:          brew services stop ccswresp
 
+      Or run in foreground: ccswresp
       For all options: ccswresp --help
     EOS
   end
 
   test do
-    # Start the server and check health endpoint
     pid = spawn bin/"ccswresp", "-p", "11436"
     sleep 2
     output = shell_output("curl -s http://127.0.0.1:11436/health")

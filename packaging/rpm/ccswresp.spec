@@ -29,17 +29,45 @@ No runtime dependencies — it's a single static Go binary.
 
 %install
 mkdir -p %{buildroot}%{_bindir}
+mkdir -p %{buildroot}%{_unitdir}
 install -m 755 %{SOURCE0} %{buildroot}%{_bindir}/ccswresp
+
+# Systemd service
+cat > %{buildroot}%{_unitdir}/ccswresp.service << 'SERVICEOF'
+[Unit]
+Description=ccswresp - Protocol Translation Proxy
+Documentation=https://github.com/uhozicloud/ccswresp
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=%{_bindir}/ccswresp
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+SERVICEOF
 
 %files
 %{_bindir}/ccswresp
+%{_unitdir}/ccswresp.service
 
 %post
+%systemd_post ccswresp.service
 echo ""
 echo "ccswresp v%{version} installed!"
 echo "Run 'ccswresp --init' to create config, then set your API key."
-echo "Run 'ccswresp --help' for all options."
 echo ""
+echo "Manage with systemd:"
+echo "  sudo systemctl start ccswresp"
+echo "  sudo systemctl enable ccswresp"
+echo ""
+
+%preun
+%systemd_preun ccswresp.service
 
 %changelog
 * Thu Jun 05 2026 uhozicloud <uhouzicloud@github.com> - 1.0.0-1

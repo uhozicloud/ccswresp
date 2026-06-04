@@ -1,0 +1,15 @@
+[Unit]
+Description=ccswresp - Protocol Translation Proxy (Responses API ↔ Chat Completions)
+Documentation=https://github.com/uhozicloud/ccswresp
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ccswresp
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
