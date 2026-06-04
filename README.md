@@ -11,62 +11,83 @@
 Codex CLI 使用 OpenAI Responses API 协议，但很多 LLM 服务只提供 Chat Completions API。
 ccswresp 在本地启动一个协议翻译代理，在两者之间无缝转换。
 
+**零运行时依赖** — 单文件 Go 静态二进制，下载即可运行。
+
 ## 快速开始
 
-### 方式 1：npm 全局安装 (所有平台)
+### 方式 1：Homebrew (macOS)
 
 ```bash
-# 需要 Node.js >= 18
-npm install -g ccswresp
-
-# 初始化配置文件
-ccswresp --init
-
-# 编辑 ~/.ccswresp/.env，设置 API key
-# 然后启动
-ccswresp
-```
-
-### 方式 2：Homebrew (macOS)
-
-```bash
-brew tap hoganyu/ccswresp
+brew tap uhozicloud/ccswresp
 brew install ccswresp
 
 ccswresp --init
-# 编辑 ~/.ccswresp/.env
+# 编辑 ~/.ccswresp/.env，设置 API key
 ccswresp
 ```
 
-### 方式 3：yum / dnf (Linux RHEL/CentOS/Fedora)
+### 方式 2：yum / dnf (RHEL/CentOS/Fedora)
 
 ```bash
 # 从 GitHub Releases 下载 RPM 包
-sudo yum install ./ccswresp-1.0.0-1.noarch.rpm
+sudo yum install ./ccswresp-1.0.0-1.x86_64.rpm
 # 或
-sudo dnf install ./ccswresp-1.0.0-1.noarch.rpm
+sudo dnf install ./ccswresp-1.0.0-1.x86_64.rpm
 
 ccswresp --init
 ccswresp
 ```
 
-### 方式 4：一键安装脚本
+### 方式 3：apt (Debian/Ubuntu)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hoganyu/ccswresp/main/scripts/install.sh | bash
+# 从 GitHub Releases 下载 DEB 包
+sudo apt install ./ccswresp_1.0.0_amd64.deb
+
+ccswresp --init
+ccswresp
 ```
 
-### 方式 5：Windows
+### 方式 4：直接下载二进制
 
 ```bash
-# 需要 Node.js >= 18
-npm install -g ccswresp
+# macOS (Apple Silicon)
+curl -fsSLo /usr/local/bin/ccswresp \
+  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_arm64
+chmod +x /usr/local/bin/ccswresp
 
-# 初始化配置
-ccswresp --init
+# macOS (Intel)
+curl -fsSLo /usr/local/bin/ccswresp \
+  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_amd64
+chmod +x /usr/local/bin/ccswresp
 
-# 编辑 %USERPROFILE%\.ccswresp\.env
-ccswresp
+# Linux (amd64)
+curl -fsSLo /usr/local/bin/ccswresp \
+  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_linux_amd64
+chmod +x /usr/local/bin/ccswresp
+
+# Linux (arm64)
+curl -fsSLo /usr/local/bin/ccswresp \
+  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_linux_arm64
+chmod +x /usr/local/bin/ccswresp
+```
+
+### 方式 5：一键安装脚本
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/uhozicloud/ccswresp/main/scripts/install.sh | bash
+```
+
+### 方式 6：Windows
+
+从 [GitHub Releases](https://github.com/uhozicloud/ccswresp/releases) 下载 `ccswresp_windows_amd64.exe`，放到 PATH 中即可。
+
+### 方式 7：从源码编译 (Go)
+
+```bash
+git clone https://github.com/uhozicloud/ccswresp.git
+cd ccswresp
+go build -o /usr/local/bin/ccswresp .
 ```
 
 ## 使用
@@ -149,19 +170,19 @@ ccswresp 可以对接任何兼容 OpenAI Chat Completions API 的后端：
 
 配置文件按以下顺序加载（先找到的生效）：
 
-1. 当前目录的 `.env`
-2. `~/.ccswresp/.env`
-3. 内建默认值
+1. `-c` 指定的配置文件
+2. 当前目录的 `.env`
+3. `~/.ccswresp/.env`
 
 CLI 参数会覆盖所有配置文件的值。
 
 ## 运行测试
 
 ```bash
-npm test
+go test -v ./...
 ```
 
-33 个翻译逻辑单元测试，不依赖网络。
+37 个翻译逻辑单元测试，不依赖网络。
 
 ## 工作原理
 
@@ -180,6 +201,13 @@ Codex CLI (Responses API) ────► ccswresp (127.0.0.1:11435)
 3. ccswresp 将上游响应翻译回 Responses API 格式（支持 SSE 流式）
 4. Codex CLI 收到标准 Responses API 响应
 
+## 技术栈
+
+- **Go** — 无运行时依赖，单文件静态二进制
+- 标准库 `net/http` — HTTP 服务器和反向代理
+- 标准库 `encoding/json` — JSON 处理
+- 零外部依赖
+
 ## License
 
-MIT © [hoganyu](https://github.com/hoganyu)
+MIT © [uhouzicloud](https://github.com/uhozicloud)

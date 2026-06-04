@@ -2,12 +2,13 @@ Package: ccswresp
 Version: 1.0.0
 Section: utils
 Priority: optional
-Architecture: all
-Depends: nodejs (>= 18)
-Maintainer: hoganyu <hoganyu@github.com>
-Homepage: https://github.com/hoganyu/ccswresp
+Architecture: amd64
+Maintainer: uhozicloud <uhouzicloud@github.com>
+Homepage: https://github.com/uhozicloud/ccswresp
 Description: Protocol translation proxy: OpenAI Responses API ↔ Chat Completions API
  ccswresp is a local protocol translation proxy that converts OpenAI Responses
  API requests to Chat Completions API format and vice versa. It enables Codex
  CLI to work with any LLM backend that provides a Chat Completions API
  (DeepSeek, OpenAI, etc.).
+ .
+ No runtime dependencies — it's a single static Go binary.

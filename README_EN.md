@@ -12,62 +12,83 @@ Codex CLI uses the OpenAI Responses API protocol, but many LLM services only
 provide a Chat Completions API. ccswresp starts a local protocol translation
 proxy that seamlessly converts between the two.
 
+**Zero runtime dependencies** — single static Go binary, download and run.
+
 ## Quick Start
 
-### Option 1: npm global install (All platforms)
+### Option 1: Homebrew (macOS)
 
 ```bash
-# Requires Node.js >= 18
-npm install -g ccswresp
-
-# Initialize config
-ccswresp --init
-
-# Edit ~/.ccswresp/.env and set your API key
-# Then start
-ccswresp
-```
-
-### Option 2: Homebrew (macOS)
-
-```bash
-brew tap hoganyu/ccswresp
+brew tap uhozicloud/ccswresp
 brew install ccswresp
 
 ccswresp --init
-# Edit ~/.ccswresp/.env
+# Edit ~/.ccswresp/.env and set your API key
 ccswresp
 ```
 
-### Option 3: yum / dnf (RHEL/CentOS/Fedora)
+### Option 2: yum / dnf (RHEL/CentOS/Fedora)
 
 ```bash
 # Download RPM from GitHub Releases
-sudo yum install ./ccswresp-1.0.0-1.noarch.rpm
+sudo yum install ./ccswresp-1.0.0-1.x86_64.rpm
 # or
-sudo dnf install ./ccswresp-1.0.0-1.noarch.rpm
+sudo dnf install ./ccswresp-1.0.0-1.x86_64.rpm
 
 ccswresp --init
 ccswresp
 ```
 
-### Option 4: One-liner install script
+### Option 3: apt (Debian/Ubuntu)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/hoganyu/ccswresp/main/scripts/install.sh | bash
+# Download DEB from GitHub Releases
+sudo apt install ./ccswresp_1.0.0_amd64.deb
+
+ccswresp --init
+ccswresp
 ```
 
-### Option 5: Windows
+### Option 4: Direct binary download
 
 ```bash
-# Requires Node.js >= 18
-npm install -g ccswresp
+# macOS (Apple Silicon)
+curl -fsSLo /usr/local/bin/ccswresp \
+  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_arm64
+chmod +x /usr/local/bin/ccswresp
 
-# Initialize config
-ccswresp --init
+# macOS (Intel)
+curl -fsSLo /usr/local/bin/ccswresp \
+  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_darwin_amd64
+chmod +x /usr/local/bin/ccswresp
 
-# Edit %USERPROFILE%\.ccswresp\.env
-ccswresp
+# Linux (amd64)
+curl -fsSLo /usr/local/bin/ccswresp \
+  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_linux_amd64
+chmod +x /usr/local/bin/ccswresp
+
+# Linux (arm64)
+curl -fsSLo /usr/local/bin/ccswresp \
+  https://github.com/uhozicloud/ccswresp/releases/download/v1.0.0/ccswresp_linux_arm64
+chmod +x /usr/local/bin/ccswresp
+```
+
+### Option 5: One-liner install script
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/uhozicloud/ccswresp/main/scripts/install.sh | bash
+```
+
+### Option 6: Windows
+
+Download `ccswresp_windows_amd64.exe` from [GitHub Releases](https://github.com/uhozicloud/ccswresp/releases) and place it in your PATH.
+
+### Option 7: Build from source (Go)
+
+```bash
+git clone https://github.com/uhozicloud/ccswresp.git
+cd ccswresp
+go build -o /usr/local/bin/ccswresp .
 ```
 
 ## Usage
@@ -150,19 +171,19 @@ ccswresp works with any OpenAI Chat Completions API-compatible backend:
 
 Config files are loaded in this order (first found wins):
 
-1. `.env` in current directory
-2. `~/.ccswresp/.env`
-3. Built-in defaults
+1. Path specified with `-c, --config`
+2. `.env` in current directory
+3. `~/.ccswresp/.env`
 
 CLI arguments override all config file values.
 
 ## Running Tests
 
 ```bash
-npm test
+go test -v ./...
 ```
 
-33 unit tests for translation logic. No network access required.
+37 unit tests for translation logic. No network access required.
 
 ## How It Works
 
@@ -181,6 +202,13 @@ Codex CLI (Responses API) ────► ccswresp (127.0.0.1:11435)
 3. ccswresp translates upstream responses back to Responses API format (SSE streaming)
 4. Codex CLI receives standard Responses API responses
 
+## Tech Stack
+
+- **Go** — zero runtime dependencies, single static binary
+- `net/http` — HTTP server and reverse proxy
+- `encoding/json` — JSON handling
+- Zero external dependencies
+
 ## License
 
-MIT © [hoganyu](https://github.com/hoganyu)
+MIT © [uhouzicloud](https://github.com/uhozicloud)

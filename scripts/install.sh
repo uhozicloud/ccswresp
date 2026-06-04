@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# ccswresp Universal Install Script
-# Supports: npm, direct download, and package manager detection
-# Usage: curl -fsSL https://raw.githubusercontent.com/hoganyu/ccswresp/main/scripts/install.sh | bash
+# ccswresp Universal Install Script (Go binary)
+# Usage: curl -fsSL https://raw.githubusercontent.com/uhozicloud/ccswresp/main/scripts/install.sh | bash
 
 set -euo pipefail
 
@@ -16,56 +15,94 @@ ok()    { echo -e "${GREEN}[ OK ]${NC} $*"; }
 err()   { echo -e "${RED}[ERR ]${NC} $*"; }
 
 PKG_NAME="ccswresp"
-NPM_REGISTRY="https://registry.npmjs.org"
+VERSION="${CCSWRESP_VERSION:-1.0.0}"
+GITHUB_REPO="uhozicloud/ccswresp"
+INSTALL_DIR="/usr/local/bin"
 
-check_node() {
-  if command -v node &>/dev/null; then
-    NODE_VERSION=$(node -v | sed 's/v//' | cut -d. -f1)
-    if [ "$NODE_VERSION" -ge 18 ]; then
-      return 0
-    fi
-  fi
-  return 1
+# Detect OS and architecture
+detect_platform() {
+  OS=$(uname -s | tr '[:upper:]' '[:lower:]')
+  ARCH=$(uname -m)
+
+  case "$ARCH" in
+    x86_64|amd64) ARCH="amd64" ;;
+    aarch64|arm64) ARCH="arm64" ;;
+    *) err "Unsupported architecture: $ARCH"; exit 1 ;;
+  esac
+
+  case "$OS" in
+    darwin) OS="darwin" ;;
+    linux) OS="linux" ;;
+    mingw*|msys*|cygwin*) OS="windows" ;;
+    *) err "Unsupported OS: $OS"; exit 1 ;;
+  esac
 }
 
-install_node() {
-  info "Node.js >= 18 is required. Installing..."
+# Check for existing install
+check_existing() {
+  if command -v ccswresp &>/dev/null; then
+    EXISTING=$(ccswresp --version 2>/dev/null | awk '{print $2}' || echo "unknown")
+    info "ccswresp v${EXISTING} already installed"
+    if [ "$EXISTING" = "$VERSION" ]; then
+      info "Already at latest version. Use CCSWRESP_VERSION=x.y.z to override."
+      exit 0
+    fi
+    info "Upgrading from v${EXISTING} to v${VERSION}..."
+  fi
+}
 
-  OS=$(uname -s)
-  if [ "$OS" = "Darwin" ]; then
-    if command -v brew &>/dev/null; then
-      brew install node
-    else
-      err "Please install Homebrew first: https://brew.sh"
-      err "Or install Node.js manually: https://nodejs.org"
-      exit 1
-    fi
-  elif [ "$OS" = "Linux" ]; then
-    if command -v apt-get &>/dev/null; then
-      curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-      sudo apt-get install -y nodejs
-    elif command -v yum &>/dev/null; then
-      curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo -E bash -
-      sudo yum install -y nodejs
-    elif command -v dnf &>/dev/null; then
-      curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo -E bash -
-      sudo dnf install -y nodejs
-    else
-      err "Cannot auto-install Node.js. Please install manually: https://nodejs.org"
-      exit 1
-    fi
+# Download and install
+install_binary() {
+  local BINARY_NAME="${PKG_NAME}_${OS}_${ARCH}"
+  if [ "$OS" = "windows" ]; then
+    BINARY_NAME="${BINARY_NAME}.exe"
+  fi
+
+  local DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/${BINARY_NAME}"
+
+  info "Downloading ${DOWNLOAD_URL}..."
+  local TMP_DIR=$(mktemp -d)
+  local TMP_FILE="${TMP_DIR}/${BINARY_NAME}"
+
+  if command -v curl &>/dev/null; then
+    curl -fsSL "$DOWNLOAD_URL" -o "$TMP_FILE" || {
+      # Try .tar.gz if raw binary not found
+      DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/${BINARY_NAME}.tar.gz"
+      info "Trying archive: ${DOWNLOAD_URL}..."
+      curl -fsSL "$DOWNLOAD_URL" -o "${TMP_DIR}/${BINARY_NAME}.tar.gz"
+      tar -xzf "${TMP_DIR}/${BINARY_NAME}.tar.gz" -C "$TMP_DIR"
+    }
+  elif command -v wget &>/dev/null; then
+    wget -q "$DOWNLOAD_URL" -O "$TMP_FILE" || {
+      DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/v${VERSION}/${BINARY_NAME}.tar.gz"
+      wget -q "$DOWNLOAD_URL" -O "${TMP_DIR}/${BINARY_NAME}.tar.gz"
+      tar -xzf "${TMP_DIR}/${BINARY_NAME}.tar.gz" -C "$TMP_DIR"
+    }
   else
-    err "Unsupported OS. Please install Node.js manually: https://nodejs.org"
+    err "Neither curl nor wget found. Please install one of them."
     exit 1
   fi
+
+  # Install
+  if [ "$OS" = "windows" ]; then
+    info "On Windows, move ${BINARY_NAME}.exe to a directory in your PATH"
+    cp "${TMP_DIR}/${BINARY_NAME}"* "${HOME}/"
+    ok "Binary saved to ${HOME}/${BINARY_NAME}"
+  else
+    if [ -w "$INSTALL_DIR" ]; then
+      cp "${TMP_DIR}/${BINARY_NAME}" "$INSTALL_DIR/ccswresp"
+      chmod +x "$INSTALL_DIR/ccswresp"
+    else
+      sudo cp "${TMP_DIR}/${BINARY_NAME}" "$INSTALL_DIR/ccswresp"
+      sudo chmod +x "$INSTALL_DIR/ccswresp"
+    fi
+    ok "Installed to ${INSTALL_DIR}/ccswresp"
+  fi
+
+  rm -rf "$TMP_DIR"
 }
 
-install_via_npm() {
-  info "Installing ${PKG_NAME} via npm..."
-  npm install -g "${PKG_NAME}"
-  ok "${PKG_NAME} installed successfully!"
-}
-
+# Initialize config
 init_config() {
   if [ ! -f "${HOME}/.ccswresp/.env" ]; then
     info "Initializing config..."
@@ -73,37 +110,24 @@ init_config() {
     ok "Config created at ~/.ccswresp/.env"
     echo ""
     echo -e "  ${BOLD}Next step:${NC} Edit ${CYAN}~/.ccswresp/.env${NC} and set your API key."
-    echo "  Run ${CYAN}ccswresp --help${NC} for all options."
   fi
 }
 
 main() {
   echo ""
-  echo -e "${BOLD}${CYAN}ccswresp Installer${NC}"
+  echo -e "${BOLD}${CYAN}ccswresp Installer v${VERSION}${NC}"
   echo ""
 
-  # Check Node.js
-  if ! check_node; then
-    install_node
-  fi
-  ok "Node.js $(node -v) detected"
-
-  # Check npm
-  if ! command -v npm &>/dev/null; then
-    err "npm not found. Please install Node.js properly."
-    exit 1
-  fi
-
-  # Install
-  install_via_npm
+  detect_platform
+  check_existing
+  install_binary
 
   # Verify
+  echo ""
   if command -v ccswresp &>/dev/null; then
-    ok "ccswresp v$(ccswresp --version 2>/dev/null | head -1 | awk '{print $2}') ready"
+    ok "ccswresp $(ccswresp --version 2>/dev/null) ready"
+    init_config
   fi
-
-  # Init config
-  init_config
 
   echo ""
   echo -e "  ${BOLD}Quick start:${NC}"
