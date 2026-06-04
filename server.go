@@ -54,7 +54,7 @@ func (s *Server) Start() error {
 	logInfo("model: " + s.DefaultModel)
 	logInfo("upstream: " + s.BaseURL)
 	if s.APIKey == "" {
-		logWarn("api_key not set — set it in .env or use -k flag")
+		logWarn("api_key not set — run 'ccswresp --init' or use -k flag")
 	}
 	fmt.Println()
 

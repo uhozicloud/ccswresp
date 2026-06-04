@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -20,8 +22,8 @@ func main() {
 	model := flag.String("m", "", "Default model name (env: model, default: deepseek-v4-pro)")
 	baseURL := flag.String("u", "", "Upstream Chat Completions API base URL (env: base_url)")
 	apiKey := flag.String("k", "", "API key for upstream service (env: api_key)")
-	configPath := flag.String("c", "", "Path to .env config file")
-	initConfig := flag.Bool("init", false, "Initialize config file at ~/.ccswresp/.env")
+	configPath := flag.String("c", "", "Path to config.json config file")
+	initConfig := flag.Bool("init", false, "Initialize config file at ~/.ccswresp/config.json")
 	quiet := flag.Bool("q", false, "Suppress request logging")
 	showVersion := flag.Bool("V", false, "Show version")
 	showHelp := flag.Bool("h", false, "Show help")
@@ -65,49 +67,39 @@ func main() {
 		}
 	}
 
-	// Load config from .env files
-	loadDotEnv(*configPath)
+	// Load config.json (priority: -c path > cwd > ~/.ccswresp/)
+	cfg := loadConfig(*configPath)
 
-	// CLI args override env vars
-	resolvedPort := 11435
+	// CLI args override config file
 	if *port > 0 {
-		resolvedPort = *port
-	} else if envPort := os.Getenv("port"); envPort != "" {
-		if p, err := strconv.Atoi(envPort); err == nil {
-			resolvedPort = p
-		}
+		cfg.Port = *port
+	} else if cfg.Port == 0 {
+		cfg.Port = 11435
 	}
-
-	resolvedBind := "127.0.0.1"
 	if *bind != "" {
-		resolvedBind = *bind
-	} else if envBind := os.Getenv("bind_addr"); envBind != "" {
-		resolvedBind = envBind
+		cfg.BindAddr = *bind
 	}
-
-	resolvedModel := "deepseek-v4-pro"
+	if cfg.BindAddr == "" {
+		cfg.BindAddr = "127.0.0.1"
+	}
 	if *model != "" {
-		resolvedModel = *model
-	} else if envModel := os.Getenv("model"); envModel != "" {
-		resolvedModel = envModel
+		cfg.Model = *model
 	}
-
-	resolvedBaseURL := "https://api.deepseek.com"
+	if cfg.Model == "" {
+		cfg.Model = "deepseek-v4-pro"
+	}
 	if *baseURL != "" {
-		resolvedBaseURL = *baseURL
-	} else if envURL := os.Getenv("base_url"); envURL != "" {
-		resolvedBaseURL = envURL
+		cfg.BaseURL = *baseURL
 	}
-
-	resolvedAPIKey := ""
+	if cfg.BaseURL == "" {
+		cfg.BaseURL = "https://api.deepseek.com"
+	}
 	if *apiKey != "" {
-		resolvedAPIKey = *apiKey
-	} else if envKey := os.Getenv("api_key"); envKey != "" {
-		resolvedAPIKey = envKey
+		cfg.APIKey = *apiKey
 	}
 
 	// Create and start server
-	server := NewServer(resolvedPort, resolvedBind, resolvedAPIKey, resolvedBaseURL, resolvedModel)
+	server := NewServer(cfg.Port, cfg.BindAddr, cfg.APIKey, cfg.BaseURL, cfg.Model)
 
 	// Handle graceful shutdown
 	sigChan := make(chan os.Signal, 1)
@@ -123,7 +115,7 @@ func main() {
 		if err.Error() != "http: Server closed" {
 			fmt.Fprintf(os.Stderr, "Failed to start: %v\n", err)
 			if strings.Contains(err.Error(), "address already in use") {
-				fmt.Fprintf(os.Stderr, "Port %d is already in use. Try: ccswresp -p %d\n", resolvedPort, resolvedPort+1)
+				fmt.Fprintf(os.Stderr, "Port %d is already in use. Try: ccswresp -p %d\n", cfg.Port, cfg.Port+1)
 			}
 			os.Exit(1)
 		}
@@ -146,8 +138,8 @@ func printHelp() {
     -u, --base-url <url>    Upstream Chat Completions API base URL
                             (default: https://api.deepseek.com, env: base_url)
     -k, --api-key <key>     API key for upstream service (env: api_key)
-    -c, --config <path>     Path to .env config file
-    --init                  Initialize config file at ~/.ccswresp/.env
+    -c, --config <path>     Path to config.json config file
+    --init                  Initialize config file at ~/.ccswresp/config.json
     -q, --quiet             Suppress request logging
     -V, --version           Show version
     -h, --help              Show this help
@@ -176,8 +168,8 @@ func printHelp() {
     bind_addr     Bind address
 
   %s
-    Priority: .env (cwd) > ~/.ccswresp/.env
-    Run 'ccswresp --init' to create ~/.ccswresp/.env
+    Priority: config.json (cwd) > ~/.ccswresp/config.json
+    Run 'ccswresp --init' to create ~/.ccswresp/config.json
 
   %s
     GitHub:  %s
@@ -196,62 +188,51 @@ func printHelp() {
 	)
 }
 
-// loadDotEnv reads .env files in priority order.
-func loadDotEnv(explicitPath string) {
+// Config represents the JSON configuration file.
+type Config struct {
+	APIKey   string `json:"api_key"`
+	BaseURL  string `json:"base_url"`
+	Model    string `json:"model"`
+	Port     int    `json:"port"`
+	BindAddr string `json:"bind_addr"`
+}
+
+// loadConfig reads config.json in priority order: explicit path > cwd > ~/.ccswresp/
+func loadConfig(explicitPath string) Config {
 	var paths []string
 
 	if explicitPath != "" {
 		paths = append(paths, explicitPath)
 	}
-
-	// cwd .env
 	if cwd, err := os.Getwd(); err == nil {
-		paths = append(paths, filepath.Join(cwd, ".env"))
+		paths = append(paths, filepath.Join(cwd, "config.json"))
 	}
-
-	// ~/.ccswresp/.env
 	if home, err := os.UserHomeDir(); err == nil {
-		paths = append(paths, filepath.Join(home, ".ccswresp", ".env"))
+		paths = append(paths, filepath.Join(home, ".ccswresp", "config.json"))
 	}
 
 	for _, p := range paths {
-		if parseDotEnv(p) {
-			return // First found wins
+		if cfg, ok := parseConfigFile(p); ok {
+			return cfg
 		}
 	}
+	return Config{}
 }
 
-// parseDotEnv parses a simple .env file (KEY=VALUE format).
-func parseDotEnv(path string) bool {
+func parseConfigFile(path string) (Config, bool) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return false
+		return Config{}, false
 	}
-
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			continue
-		}
-
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-
-		// Don't override env vars already set
-		if os.Getenv(key) == "" {
-			os.Setenv(key, value)
-		}
+	var cfg Config
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: invalid config %s: %v\n", path, err)
+		return Config{}, false
 	}
-	return true
+	return cfg, true
 }
 
-// doInitConfig creates the default config file at ~/.ccswresp/.env.
+// doInitConfig interactively creates ~/.ccswresp/config.json.
 func doInitConfig() {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -260,32 +241,73 @@ func doInitConfig() {
 	}
 
 	configDir := filepath.Join(home, ".ccswresp")
-	configFile := filepath.Join(configDir, ".env")
+	configFile := filepath.Join(configDir, "config.json")
 
 	if _, err := os.Stat(configFile); err == nil {
 		fmt.Printf("Config already exists at %s\n", configFile)
-		fmt.Println("Remove it first to re-initialize.")
-		return
+		fmt.Print("Overwrite? [y/N]: ")
+		answer, _ := bufio.NewReader(os.Stdin).ReadString('\n')
+		if strings.ToLower(strings.TrimSpace(answer)) != "y" {
+			return
+		}
 	}
 
+	reader := bufio.NewReader(os.Stdin)
+	cfg := Config{
+		BaseURL: "https://api.deepseek.com",
+		Model:   "deepseek-v4-pro",
+		Port:    11435,
+	}
+
+	fmt.Println()
+	fmt.Println(bold("ccswresp setup"))
+	fmt.Print("Press Enter to accept defaults.\n\n")
+
+	// API Key (required)
+	for cfg.APIKey == "" {
+		fmt.Print("API Key: ")
+		input, _ := reader.ReadString('\n')
+		cfg.APIKey = strings.TrimSpace(input)
+		if cfg.APIKey == "" {
+			fmt.Println("  API key is required.")
+		}
+	}
+
+	// Base URL
+	fmt.Printf("Base URL [%s]: ", cfg.BaseURL)
+	input, _ := reader.ReadString('\n')
+	if s := strings.TrimSpace(input); s != "" {
+		cfg.BaseURL = s
+	}
+
+	// Model
+	fmt.Printf("Model [%s]: ", cfg.Model)
+	input, _ = reader.ReadString('\n')
+	if s := strings.TrimSpace(input); s != "" {
+		cfg.Model = s
+	}
+
+	// Port
+	fmt.Printf("Port [%d]: ", cfg.Port)
+	input, _ = reader.ReadString('\n')
+	if s := strings.TrimSpace(input); s != "" {
+		if p, err := strconv.Atoi(s); err == nil && p > 0 {
+			cfg.Port = p
+		}
+	}
+
+	// Write config
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		fmt.Fprintf(os.Stderr, "Cannot create config directory: %v\n", err)
 		os.Exit(1)
 	}
 
-	template := `# ccswresp Configuration
-# See https://github.com/uhozicloud/ccswresp for docs
-
-api_key=sk-your-api-key-here
-base_url=https://api.deepseek.com
-model=deepseek-v4-pro
-port=11435
-`
-	if err := os.WriteFile(configFile, []byte(template), 0644); err != nil {
+	data, _ := json.MarshalIndent(cfg, "", "  ")
+	if err := os.WriteFile(configFile, data, 0644); err != nil {
 		fmt.Fprintf(os.Stderr, "Cannot write config: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Config created at %s\n", configFile)
-	fmt.Println("Edit this file to set your API key and preferences.")
+	fmt.Printf("\n%s Config saved: %s\n", cGreen+"✓"+cReset, configFile)
+	fmt.Printf("Start with: %s\n", cyan("ccswresp"))
 }
