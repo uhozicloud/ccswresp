@@ -117,10 +117,10 @@ func (s *Server) handleRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Build upstream Chat Completions request
-	chatBody, stream, messages := s.buildChatBody(body)
+	chatBody, stream, _ := s.buildChatBody(body)
 
 	// Proxy to upstream
-	s.proxyToUpstream(w, chatBody, stream, messages)
+	s.proxyToUpstream(w, chatBody, stream)
 }
 
 func (s *Server) buildChatBody(body map[string]interface{}) (map[string]interface{}, bool, []map[string]interface{}) {
@@ -147,7 +147,6 @@ func (s *Server) buildChatBody(body map[string]interface{}) (map[string]interfac
 
 	// Translate input messages
 	messages, stats := translateInput(body["input"], enableThinking)
-	_ = stats // stats are logged below
 
 	// Recover reasoning content
 	restored := recoverReasoning(messages)
@@ -241,7 +240,7 @@ func (s *Server) buildChatBody(body map[string]interface{}) (map[string]interfac
 	return chatBody, stream, messages
 }
 
-func (s *Server) proxyToUpstream(w http.ResponseWriter, chatBody map[string]interface{}, stream bool, messages []map[string]interface{}) {
+func (s *Server) proxyToUpstream(w http.ResponseWriter, chatBody map[string]interface{}, stream bool) {
 	chatJSON, err := json.Marshal(chatBody)
 	if err != nil {
 		s.writeError(w, http.StatusInternalServerError, "failed to marshal request: "+err.Error())

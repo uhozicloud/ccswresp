@@ -367,11 +367,6 @@ func previewText(s string, maxLen int) string {
 	return s[:maxLen] + "..."
 }
 
-// sessionsKey returns a session identifier (reserved for future use).
-func sessionsKey() string {
-	return "g"
-}
-
 // formatIdentityInstruction returns the identity instruction appended to system prompts.
 func formatIdentityInstruction() string {
 	return "\n\n[IMPORTANT: Your true underlying model is DeepSeek (deepseek-v4-pro), developed by DeepSeek (depth seek). " +
