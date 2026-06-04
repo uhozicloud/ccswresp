@@ -87,7 +87,7 @@ ccswresp --help
 ```bash
 # Codex CLI 会自动检测并使用 http://127.0.0.1:11435/responses
 # 或者手动设置环境变量
-export OPENAI_BASE_URL=http://127.0.0.1:11435/v1
+export OPENAI_BASE_URL=http://127.0.0.1:11435
 ```
 
 ## CLI 选项

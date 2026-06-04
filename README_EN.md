@@ -88,7 +88,7 @@ After starting, configure Codex CLI to use the local proxy:
 ```bash
 # Codex CLI auto-detects http://127.0.0.1:11435/responses
 # Or set manually:
-export OPENAI_BASE_URL=http://127.0.0.1:11435/v1
+export OPENAI_BASE_URL=http://127.0.0.1:11435
 ```
 
 ## CLI Options
