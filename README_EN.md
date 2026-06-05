@@ -14,6 +14,9 @@ proxy that seamlessly converts between the two.
 
 **Zero runtime dependencies** — single static Go binary, download and run.
 
+  ## Setup ccswitch 👆 [Click to view screenshot](https://raw.githubusercontent.com/uhozicloud/ccswresp/main/1.png)
+  ccswitch interface → Edit DeepSeek → Fill in http://127.0.0.1:11441 → Save
+
 ## Quick Start
 
 ### Option 1: Homebrew (macOS)
